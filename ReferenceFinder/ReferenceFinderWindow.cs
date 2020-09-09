@@ -13,7 +13,7 @@ public class ReferenceFinderWindow : EditorWindow
 
     private static ReferenceFinderData data = new ReferenceFinderData();
     private static bool initializedData = false;
-    
+
     private bool isDepend = false;
     private bool needUpdateState = true;
 
@@ -24,15 +24,15 @@ public class ReferenceFinderWindow : EditorWindow
     //工具栏样式
     private GUIStyle toolbarGUIStyle;
     //选中资源列表
-    private List<string> selectedAssetGuid = new List<string>();    
+    private List<string> selectedAssetGuid = new List<string>();
 
     private AssetTreeView m_AssetTreeView;
 
     [SerializeField]
     private TreeViewState m_TreeViewState;
-    
+
     //查找资源引用信息
-    [MenuItem("Assets/Find References In Project %#&f", false, 25)]
+    [MenuItem("Assets/Find References In Project %#f", false, 25)]
     static void FindRef()
     {
         InitDataIfNeeded();
@@ -40,7 +40,7 @@ public class ReferenceFinderWindow : EditorWindow
         ReferenceFinderWindow window = GetWindow<ReferenceFinderWindow>();
         window.UpdateSelectedAssets();
     }
-    
+
     //打开窗口
     [MenuItem("Window/Reference Finder", false, 1000)]
     static void OpenWindow()
@@ -49,7 +49,7 @@ public class ReferenceFinderWindow : EditorWindow
         window.wantsMouseMove = false;
         window.titleContent = new GUIContent("Ref Finder");
         window.Show();
-        window.Focus();        
+        window.Focus();
     }
 
     //初始化数据
@@ -58,7 +58,7 @@ public class ReferenceFinderWindow : EditorWindow
         if (!initializedData)
         {
             //初始化数据
-            if(!data.ReadFromCache())
+            if (!data.ReadFromCache())
             {
                 data.CollectDependenciesInfo();
             }
@@ -76,12 +76,12 @@ public class ReferenceFinderWindow : EditorWindow
             initializedGUIStyle = true;
         }
     }
-    
+
     //更新选中资源列表
     private void UpdateSelectedAssets()
     {
         selectedAssetGuid.Clear();
-        foreach(var obj in Selection.objects)
+        foreach (var obj in Selection.objects)
         {
             string path = AssetDatabase.GetAssetPath(obj);
             //如果是文件夹
@@ -90,13 +90,13 @@ public class ReferenceFinderWindow : EditorWindow
                 string[] folder = new string[] { path };
                 //将文件夹下所有资源作为选择资源
                 string[] guids = AssetDatabase.FindAssets(null, folder);
-                foreach(var guid in guids)
+                foreach (var guid in guids)
                 {
                     if (!selectedAssetGuid.Contains(guid) &&
                         !Directory.Exists(AssetDatabase.GUIDToAssetPath(guid)))
                     {
                         selectedAssetGuid.Add(guid);
-                    }                        
+                    }
                 }
             }
             //如果是文件资源
@@ -115,7 +115,7 @@ public class ReferenceFinderWindow : EditorWindow
         if (needUpdateAssetTree && selectedAssetGuid.Count != 0)
         {
             var root = SelectedAssetGuidToRootItem(selectedAssetGuid);
-            if(m_AssetTreeView == null)
+            if (m_AssetTreeView == null)
             {
                 //初始化TreeView
                 if (m_TreeViewState == null)
@@ -127,6 +127,7 @@ public class ReferenceFinderWindow : EditorWindow
             m_AssetTreeView.assetRoot = root;
             m_AssetTreeView.CollapseAll();
             m_AssetTreeView.Reload();
+            m_AssetTreeView.ExpandAll();
             needUpdateAssetTree = false;
         }
     }
@@ -146,9 +147,9 @@ public class ReferenceFinderWindow : EditorWindow
         {
             //绘制Treeview
             m_AssetTreeView.OnGUI(new Rect(0, toolbarGUIStyle.fixedHeight, position.width, position.height - toolbarGUIStyle.fixedHeight));
-        }        
+        }
     }
-    
+
     //绘制上条
     public void DrawOptionBar()
     {
@@ -162,8 +163,9 @@ public class ReferenceFinderWindow : EditorWindow
         }
         //修改模式
         bool PreIsDepend = isDepend;
-        isDepend = GUILayout.Toggle(isDepend, isDepend ? "Model(Depend)" : "Model(Reference)", toolbarButtonGUIStyle,GUILayout.Width(100));
-        if(PreIsDepend != isDepend){
+        isDepend = GUILayout.Toggle(isDepend, isDepend ? "引用资源" : "被引用", toolbarButtonGUIStyle, GUILayout.Width(100));
+        if (PreIsDepend != isDepend)
+        {
             OnModelSelect();
         }
         //是否需要更新状态
@@ -187,7 +189,7 @@ public class ReferenceFinderWindow : EditorWindow
         }
         EditorGUILayout.EndHorizontal();
     }
-    
+
     private void OnModelSelect()
     {
         needUpdateAssetTree = true;
@@ -198,7 +200,7 @@ public class ReferenceFinderWindow : EditorWindow
     //生成root相关
     private HashSet<string> updatedAssetSet = new HashSet<string>();
     //通过选择资源列表生成TreeView的根节点
-    private  AssetViewItem SelectedAssetGuidToRootItem(List<string> selectedAssetGuid)
+    private AssetViewItem SelectedAssetGuidToRootItem(List<string> selectedAssetGuid)
     {
         updatedAssetSet.Clear();
         int elementCount = 0;
@@ -215,7 +217,7 @@ public class ReferenceFinderWindow : EditorWindow
         return root;
     }
     //通过每个节点的数据生成子节点
-    private  AssetViewItem CreateTree(string guid, ref int elementCount, int _depth, Stack<string> stack)
+    private AssetViewItem CreateTree(string guid, ref int elementCount, int _depth, Stack<string> stack)
     {
         if (stack.Contains(guid))
             return null;
@@ -225,7 +227,7 @@ public class ReferenceFinderWindow : EditorWindow
         {
             data.UpdateAssetState(guid);
             updatedAssetSet.Add(guid);
-        }        
+        }
         ++elementCount;
         var referenceData = data.assetDict[guid];
         var root = new AssetViewItem { id = elementCount, displayName = referenceData.name, data = referenceData, depth = _depth };
