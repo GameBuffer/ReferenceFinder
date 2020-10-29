@@ -7,29 +7,29 @@ using UnityEditor.IMGUI.Controls;
 public class ReferenceFinderWindow : EditorWindow
 {
     //依赖模式的key
-    const string isDependPrefKey = "ReferenceFinderData_IsDepend";
+    const string _isDependPrefKey = "ReferenceFinderData_IsDepend";
     //是否需要更新信息状态的key
-    const string needUpdateStatePrefKey = "ReferenceFinderData_needUpdateState";
+    const string _needUpdateStatePrefKey = "ReferenceFinderData_needUpdateState";
 
-    private static ReferenceFinderData data = new ReferenceFinderData();
-    private static bool initializedData = false;
+    private static ReferenceFinderData _data = new ReferenceFinderData();
+    private static bool _initializedData = false;
 
-    private bool isDepend = false;
-    private bool needUpdateState = true;
+    private bool _isDepend = false;
+    private bool _needUpdateState = true;
 
-    private bool needUpdateAssetTree = false;
-    private bool initializedGUIStyle = false;
+    private bool _needUpdateAssetTree = false;
+    private bool _initializedGUIStyle = false;
     //工具栏按钮样式
-    private GUIStyle toolbarButtonGUIStyle;
+    private GUIStyle _toolbarButtonGUIStyle;
     //工具栏样式
-    private GUIStyle toolbarGUIStyle;
+    private GUIStyle _toolbarGUIStyle;
     //选中资源列表
-    private List<string> selectedAssetGuid = new List<string>();
+    private List<string> _selectedAssetGuid = new List<string>();
 
-    private AssetTreeView m_AssetTreeView;
+    private AssetTreeView _assetTreeView;
 
     [SerializeField]
-    private TreeViewState m_TreeViewState;
+    private TreeViewState _treeViewState;
 
     //查找资源引用信息
     [MenuItem("Assets/Find References In Project %#f", false, 25)]
@@ -55,32 +55,32 @@ public class ReferenceFinderWindow : EditorWindow
     //初始化数据
     static void InitDataIfNeeded()
     {
-        if (!initializedData)
+        if (!_initializedData)
         {
             //初始化数据
-            if (!data.ReadFromCache())
+            if (!_data.ReadFromCache())
             {
-                data.CollectDependenciesInfo();
+                _data.CollectDependenciesInfo();
             }
-            initializedData = true;
+            _initializedData = true;
         }
     }
 
     //初始化GUIStyle
     void InitGUIStyleIfNeeded()
     {
-        if (!initializedGUIStyle)
+        if (!_initializedGUIStyle)
         {
-            toolbarButtonGUIStyle = new GUIStyle("ToolbarButton");
-            toolbarGUIStyle = new GUIStyle("Toolbar");
-            initializedGUIStyle = true;
+            _toolbarButtonGUIStyle = new GUIStyle("ToolbarButton");
+            _toolbarGUIStyle = new GUIStyle("Toolbar");
+            _initializedGUIStyle = true;
         }
     }
 
     //更新选中资源列表
     private void UpdateSelectedAssets()
     {
-        selectedAssetGuid.Clear();
+        _selectedAssetGuid.Clear();
         foreach (var obj in Selection.objects)
         {
             string path = AssetDatabase.GetAssetPath(obj);
@@ -92,10 +92,10 @@ public class ReferenceFinderWindow : EditorWindow
                 string[] guids = AssetDatabase.FindAssets(null, folder);
                 foreach (var guid in guids)
                 {
-                    if (!selectedAssetGuid.Contains(guid) &&
+                    if (!_selectedAssetGuid.Contains(guid) &&
                         !Directory.Exists(AssetDatabase.GUIDToAssetPath(guid)))
                     {
-                        selectedAssetGuid.Add(guid);
+                        _selectedAssetGuid.Add(guid);
                     }
                 }
             }
@@ -103,39 +103,39 @@ public class ReferenceFinderWindow : EditorWindow
             else
             {
                 string guid = AssetDatabase.AssetPathToGUID(path);
-                selectedAssetGuid.Add(guid);
+                _selectedAssetGuid.Add(guid);
             }
         }
-        needUpdateAssetTree = true;
+        _needUpdateAssetTree = true;
     }
 
     //通过选中资源列表更新TreeView
     private void UpdateAssetTree()
     {
-        if (needUpdateAssetTree && selectedAssetGuid.Count != 0)
+        if (_needUpdateAssetTree && _selectedAssetGuid.Count != 0)
         {
-            var root = SelectedAssetGuidToRootItem(selectedAssetGuid);
-            if (m_AssetTreeView == null)
+            var root = SelectedAssetGuidToRootItem(_selectedAssetGuid);
+            if (_assetTreeView == null)
             {
                 //初始化TreeView
-                if (m_TreeViewState == null)
-                    m_TreeViewState = new TreeViewState();
+                if (_treeViewState == null)
+                    _treeViewState = new TreeViewState();
                 var headerState = AssetTreeView.CreateDefaultMultiColumnHeaderState(position.width);
                 var multiColumnHeader = new MultiColumnHeader(headerState);
-                m_AssetTreeView = new AssetTreeView(m_TreeViewState, multiColumnHeader);
+                _assetTreeView = new AssetTreeView(_treeViewState, multiColumnHeader);
             }
-            m_AssetTreeView.assetRoot = root;
-            m_AssetTreeView.CollapseAll();
-            m_AssetTreeView.Reload();
-            m_AssetTreeView.ExpandAll();
-            needUpdateAssetTree = false;
+            _assetTreeView.assetRoot = root;
+            _assetTreeView.CollapseAll();
+            _assetTreeView.Reload();
+            _assetTreeView.ExpandAll();
+            _needUpdateAssetTree = false;
         }
     }
 
     private void OnEnable()
     {
-        isDepend = PlayerPrefs.GetInt(isDependPrefKey, 0) == 1;
-        needUpdateState = PlayerPrefs.GetInt(needUpdateStatePrefKey, 1) == 1;
+        _isDepend = PlayerPrefs.GetInt(_isDependPrefKey, 0) == 1;
+        _needUpdateState = PlayerPrefs.GetInt(_needUpdateStatePrefKey, 1) == 1;
     }
 
     private void OnGUI()
@@ -143,57 +143,57 @@ public class ReferenceFinderWindow : EditorWindow
         InitGUIStyleIfNeeded();
         DrawOptionBar();
         UpdateAssetTree();
-        if (m_AssetTreeView != null)
+        if (_assetTreeView != null)
         {
             //绘制Treeview
-            m_AssetTreeView.OnGUI(new Rect(0, toolbarGUIStyle.fixedHeight, position.width, position.height - toolbarGUIStyle.fixedHeight));
+            _assetTreeView.OnGUI(new Rect(0, _toolbarGUIStyle.fixedHeight, position.width, position.height - _toolbarGUIStyle.fixedHeight));
         }
     }
 
     //绘制上条
     public void DrawOptionBar()
     {
-        EditorGUILayout.BeginHorizontal(toolbarGUIStyle);
+        EditorGUILayout.BeginHorizontal(_toolbarGUIStyle);
         //刷新数据
-        if (GUILayout.Button("Refresh Data", toolbarButtonGUIStyle))
+        if (GUILayout.Button("刷新缓存", _toolbarButtonGUIStyle))
         {
-            data.CollectDependenciesInfo();
-            needUpdateAssetTree = true;
+            _data.CollectDependenciesInfo();
+            _needUpdateAssetTree = true;
             EditorGUIUtility.ExitGUI();
         }
         //修改模式
-        bool PreIsDepend = isDepend;
-        isDepend = GUILayout.Toggle(isDepend, isDepend ? "引用资源" : "被引用", toolbarButtonGUIStyle, GUILayout.Width(100));
-        if (PreIsDepend != isDepend)
+        bool PreIsDepend = _isDepend;
+        _isDepend = GUILayout.Toggle(_isDepend, _isDepend ? "引用资源" : "被引用", _toolbarButtonGUIStyle, GUILayout.Width(100));
+        if (PreIsDepend != _isDepend)
         {
             OnModelSelect();
         }
         //是否需要更新状态
-        bool PreNeedUpdateState = needUpdateState;
-        needUpdateState = GUILayout.Toggle(needUpdateState, "Need Update State", toolbarButtonGUIStyle);
-        if (PreNeedUpdateState != needUpdateState)
+        bool PreNeedUpdateState = _needUpdateState;
+        _needUpdateState = GUILayout.Toggle(_needUpdateState, "Need Update State", _toolbarButtonGUIStyle);
+        if (PreNeedUpdateState != _needUpdateState)
         {
-            PlayerPrefs.SetInt(needUpdateStatePrefKey, needUpdateState ? 1 : 0);
+            PlayerPrefs.SetInt(_needUpdateStatePrefKey, _needUpdateState ? 1 : 0);
         }
         GUILayout.FlexibleSpace();
 
         //扩展
-        if (GUILayout.Button("Expand", toolbarButtonGUIStyle))
+        if (GUILayout.Button("展开", _toolbarButtonGUIStyle))
         {
-            if (m_AssetTreeView != null) m_AssetTreeView.ExpandAll();
+            if (_assetTreeView != null) _assetTreeView.ExpandAll();
         }
         //折叠
-        if (GUILayout.Button("Collapse", toolbarButtonGUIStyle))
+        if (GUILayout.Button("收缩", _toolbarButtonGUIStyle))
         {
-            if (m_AssetTreeView != null) m_AssetTreeView.CollapseAll();
+            if (_assetTreeView != null) _assetTreeView.CollapseAll();
         }
         EditorGUILayout.EndHorizontal();
     }
 
     private void OnModelSelect()
     {
-        needUpdateAssetTree = true;
-        PlayerPrefs.SetInt(isDependPrefKey, isDepend ? 1 : 0);
+        _needUpdateAssetTree = true;
+        PlayerPrefs.SetInt(_isDependPrefKey, _isDepend ? 1 : 0);
     }
 
 
@@ -223,15 +223,15 @@ public class ReferenceFinderWindow : EditorWindow
             return null;
 
         stack.Push(guid);
-        if (needUpdateState && !updatedAssetSet.Contains(guid))
+        if (_needUpdateState && !updatedAssetSet.Contains(guid))
         {
-            data.UpdateAssetState(guid);
+            _data.UpdateAssetState(guid);
             updatedAssetSet.Add(guid);
         }
         ++elementCount;
-        var referenceData = data.assetDict[guid];
+        var referenceData = _data.assetDict[guid];
         var root = new AssetViewItem { id = elementCount, displayName = referenceData.name, data = referenceData, depth = _depth };
-        var childGuids = isDepend ? referenceData.dependencies : referenceData.references;
+        var childGuids = _isDepend ? referenceData.dependencies : referenceData.references;
         foreach (var childGuid in childGuids)
         {
             var child = CreateTree(childGuid, ref elementCount, _depth + 1, stack);

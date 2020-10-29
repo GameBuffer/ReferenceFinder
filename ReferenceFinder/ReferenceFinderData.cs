@@ -12,13 +12,13 @@ public class ReferenceFinderData
     private const string CACHE_PATH = "Library/ReferenceFinderCache";
     private const string CACHE_VERSION = "V1";
     //资源引用信息字典
-    public Dictionary<string, AssetDescription> assetDict = new Dictionary<string, AssetDescription>();    
+    public Dictionary<string, AssetDescription> assetDict = new Dictionary<string, AssetDescription>();
 
     //收集资源引用信息并更新缓存
     public void CollectDependenciesInfo()
     {
         try
-        {          
+        {
             ReadFromCache();
             var allAssets = AssetDatabase.GetAllAssetPaths();
             int totalCount = allAssets.Length;
@@ -34,7 +34,7 @@ public class ReferenceFinderData
                     ImportAsset(allAssets[i]);
                 if (i % 2000 == 0)
                     GC.Collect();
-            }      
+            }
             //将信息写入缓存
             EditorUtility.DisplayCancelableProgressBar("Refresh", "Write to cache", 1f);
             WriteToChache();
@@ -43,7 +43,7 @@ public class ReferenceFinderData
             UpdateReferenceInfo();
             EditorUtility.ClearProgressBar();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Debug.LogError(e);
             EditorUtility.ClearProgressBar();
@@ -53,11 +53,11 @@ public class ReferenceFinderData
     //通过依赖信息更新引用信息
     private void UpdateReferenceInfo()
     {
-        foreach(var asset in assetDict)
+        foreach (var asset in assetDict)
         {
-            foreach(var assetGuid in asset.Value.dependencies)
+            foreach (var assetGuid in asset.Value.dependencies)
             {
-                assetDict[assetGuid].references.Add(asset.Key);
+                if (assetDict.ContainsKey(assetGuid)) assetDict[assetGuid].references.Add(asset.Key);
             }
         }
     }
@@ -111,16 +111,16 @@ public class ReferenceFinderData
         try
         {
             BinaryFormatter bf = new BinaryFormatter();
-            string cacheVersion = (string) bf.Deserialize(fs);
+            string cacheVersion = (string)bf.Deserialize(fs);
             if (cacheVersion != CACHE_VERSION)
             {
                 return false;
             }
 
             EditorUtility.DisplayCancelableProgressBar("Import Cache", "Reading Cache", 0);
-            serializedGuid = (List<string>) bf.Deserialize(fs);
-            serializedDependencyHash = (List<string>) bf.Deserialize(fs);
-            serializedDenpendencies = (List<int[]>) bf.Deserialize(fs);
+            serializedGuid = (List<string>)bf.Deserialize(fs);
+            serializedDependencyHash = (List<string>)bf.Deserialize(fs);
+            serializedDenpendencies = (List<int[]>)bf.Deserialize(fs);
             EditorUtility.ClearProgressBar();
         }
         catch
@@ -146,7 +146,7 @@ public class ReferenceFinderData
             }
         }
 
-        for(int i = 0; i < serializedGuid.Count; ++i)
+        for (int i = 0; i < serializedGuid.Count; ++i)
         {
             string guid = serializedGuid[i];
             if (assetDict.ContainsKey(guid))
@@ -183,7 +183,7 @@ public class ReferenceFinderData
                 serializedDependencyHash.Add(pair.Value.assetDependencyHash);
             }
 
-            foreach(var guid in serializedGuid)
+            foreach (var guid in serializedGuid)
             {
                 //使用 Where 子句过滤目录
                 int[] indexes = assetDict[guid].dependencies.
@@ -199,13 +199,13 @@ public class ReferenceFinderData
             bf.Serialize(fs, serializedDenpendencies);
         }
     }
-    
+
     //更新引用信息状态
     public void UpdateAssetState(string guid)
     {
         AssetDescription ad;
-        if (assetDict.TryGetValue(guid,out ad) && ad.state != AssetState.NODATA)
-        {            
+        if (assetDict.TryGetValue(guid, out ad) && ad.state != AssetState.NODATA)
+        {
             if (File.Exists(ad.path))
             {
                 //修改时间与记录的不同为修改过的资源
@@ -225,9 +225,9 @@ public class ReferenceFinderData
                 ad.state = AssetState.MISSING;
             }
         }
-        
+
         //字典中没有该数据
-        else if(!assetDict.TryGetValue(guid, out ad))
+        else if (!assetDict.TryGetValue(guid, out ad))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             ad = new AssetDescription();
@@ -241,7 +241,7 @@ public class ReferenceFinderData
     //根据引用信息状态获取状态描述
     public static string GetInfoByState(AssetState state)
     {
-        if(state == AssetState.CHANGED)
+        if (state == AssetState.CHANGED)
         {
             return "<color=#F0672AFF>Changed</color>";
         }
@@ -249,7 +249,7 @@ public class ReferenceFinderData
         {
             return "<color=#FF0000FF>Missing</color>";
         }
-        else if(state == AssetState.NODATA)
+        else if (state == AssetState.NODATA)
         {
             return "<color=#FFE300FF>No Data</color>";
         }
@@ -271,6 +271,6 @@ public class ReferenceFinderData
         NORMAL,
         CHANGED,
         MISSING,
-        NODATA,        
+        NODATA,
     }
 }
